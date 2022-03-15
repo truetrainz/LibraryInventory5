@@ -1,9 +1,6 @@
 package main;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.sql.DriverManager;
+import java.sql.*;
 import java.util.ArrayList;
 
 /**
@@ -60,10 +57,11 @@ public class DatabaseControl {
 
     // uses a string name to retrieve the id that it is associated with
     public int getIdFromName(String name) {
-        String sql = "SELECT id FROM inventory WHERE name = '" + name + "';";
+        String sql = "SELECT id FROM inventory WHERE name = ?;";
         try {
-            Statement statement = connection.createStatement();
-            ResultSet results = statement.executeQuery(sql);
+            PreparedStatement pstmt = connection.prepareStatement(sql);
+            pstmt.setString(1, name);
+            ResultSet results = pstmt.executeQuery();
             if (results.next()) {
                 return results.getInt("id");
             }
@@ -76,15 +74,21 @@ public class DatabaseControl {
     // used to add brand new inventory at one point in time
     // is no longer being used currently here just in case we want to use it at a later point in time
     public void addNewInventory(int amount, String name, String description, String barcode, String vendorId, String manufactorId, int reorderAmount) {
-        String sql = "INSERT INTO inventory (id, amount, description, name, vendor_id, manufactor_id) VALUES ((SELECT nextval('inventory_sequence')), "
-                + amount + ", '" + description + "', '" + name + "', '" + vendorId + "', '" + manufactorId + "');";
-        String sql2 = "INSERT INTO inventory_in (id, barcode, amount, name) VALUES ((SELECT nextval('inventory_in_sequence')), '" +
-                barcode + "', " + amount + ", '" + name + "', " + reorderAmount + ");";
+        String sql = "INSERT INTO inventory (id, amount, description, name, vendor_id, manufactor_id) VALUES ((SELECT nextval('inventory_sequence')), ?, ?, ?, ?, ?);";
+        String sql2 = "INSERT INTO inventory_in (id, barcode, amount, name) VALUES ((SELECT nextval('inventory_in_sequence')), ?, ?, ?);";
         try {
-            Statement statement = connection.createStatement();
-            statement.addBatch(sql);
-            statement.addBatch(sql2);
-            statement.executeBatch();
+            PreparedStatement pstmt = connection.prepareStatement(sql);
+            pstmt.setInt(1, amount);
+            pstmt.setString(2, description);
+            pstmt.setString(3, name);
+            pstmt.setString(4, vendorId);
+            pstmt.setString(5, manufactorId);
+            pstmt.executeUpdate();
+            PreparedStatement pstmt2 = connection.prepareStatement(sql2);
+            pstmt2.setString(1, barcode);
+            pstmt2.setInt(2, amount);
+            pstmt2.setString(3, name);
+            pstmt2.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -92,10 +96,11 @@ public class DatabaseControl {
 
     // retrieves all of the fields associated with a name from the Inventory table
     public Inventory getInventoryUsingName(String name) {
-        String sql = "SELECT * FROM inventory WHERE name = '" + name + "';";
+        String sql = "SELECT * FROM inventory WHERE name = ?;";
         try {
-            Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(sql);
+            PreparedStatement pstmt = connection.prepareStatement(sql);
+            pstmt.setString(1, name);
+            ResultSet resultSet = pstmt.executeQuery(sql);
             if (resultSet.next()) {
                 int id = resultSet.getInt("id");
                 int amount = resultSet.getInt("amount");
@@ -124,11 +129,12 @@ public class DatabaseControl {
 
     // adds a row to the inventory_in table
     public void addNewInventoryIn(String barcode, int amount, String name) {
-        String sql = "INSERT INTO inventory_in (id, barcode, amount, name) VALUES ((SELECT nextval('inventory_in_sequence')), '" +
-                barcode + "', " + amount + ", '" + name + "');";
-        System.out.println(sql);
+        String sql = "INSERT INTO inventory_in (id, barcode, amount, name) VALUES ((SELECT nextval('inventory_in_sequence')), ?, ?, ?);";
         try {
-            Statement statement = connection.createStatement();
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, barcode);
+            statement.setInt(2, amount);
+            statement.setString(3, name);
             statement.executeUpdate(sql);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -137,9 +143,10 @@ public class DatabaseControl {
 
     // retrieves the amount associated with a name in the inventory table
     public int getInventoryAmountFromInventoryUsingName(String name) {
-        String sql = "SELECT amount FROM inventory WHERE name = '" + name + "';";
+        String sql = "SELECT amount FROM inventory WHERE name = ?;";
         try {
-            Statement statement = connection.createStatement();
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, name);
             ResultSet results = statement.executeQuery(sql);
             while (results.next()) {
                 return results.getInt("amount");
@@ -152,10 +159,17 @@ public class DatabaseControl {
 
     // addes an inventory row to the inventory table
     public void addInventory(int amount, String description, String name, String vendorId, String manufactorId, int reoderAmount, String resin, String specail) {
-        String sql = "INSERT INTO inventory (id, amount, description, name, vendor_id, manufactor_id, reorder_amount, resin, speciality) VALUES ((SELECT nextval('inventory_sequence')), "
-                + amount + ", '" + description + "', '" + name + "', '" +  vendorId + "', '" + manufactorId + "', " + reoderAmount + ", '" + resin + "', '" + specail + "');";
+        String sql = "INSERT INTO inventory (id, amount, description, name, vendor_id, manufactor_id, reorder_amount, resin, speciality) VALUES ((SELECT nextval('inventory_sequence')), ?, ?, ?, ?, ?, ?, ?, ?);";
         try {
-            Statement statement = connection.createStatement();
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setInt(1, amount);
+            statement.setString(2, description);
+            statement.setString(3, name);
+            statement.setString(4, vendorId);
+            statement.setString(5, manufactorId);
+            statement.setInt(6, reoderAmount);
+            statement.setString(7, resin);
+            statement.setString(8, specail);
             statement.executeUpdate(sql);
         } catch (Exception e) {
             e.printStackTrace();
@@ -164,9 +178,10 @@ public class DatabaseControl {
 
     // returns the amount in the inventory table associated with a name
     public int getAmountFromName(String name) {
-        String sql = "SELECT amount FROM inventory WHERE name = '" + name + "';";
+        String sql = "SELECT amount FROM inventory WHERE name = ?;";
         try {
-            Statement statement = connection.createStatement();
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, name);
             ResultSet resultSet = statement.executeQuery(sql);
             if (resultSet.next()) {
                 return resultSet.getInt("amount");
@@ -181,9 +196,11 @@ public class DatabaseControl {
 
     // used to check a name might be used in the future for fool proofing the system
     public boolean checkName(String name) {
-        String sql = "SELECT name FROM inventory WHERE name = '" + name + "';";
+        String sql = "SELECT name FROM inventory WHERE name = ?;";
         try {
-            ResultSet resultSet = connection.createStatement().executeQuery(sql);
+            PreparedStatement pstmt = connection.prepareStatement(sql);
+            pstmt.setString(1, name);
+            ResultSet resultSet = pstmt.executeQuery();
             int value = 0;
             while (resultSet.next()) {
                 value++;
@@ -201,10 +218,12 @@ public class DatabaseControl {
 
     // used to add incoming inventory not currnetly used
     public void addIncomingInventory(String barcode, int amount, String name) {
-        String sql = "INSERT INTO inventory_in (id, barcode, amount, name) VALUES ((SELECT nextval('inventory_in_sequence')), '"
-                + barcode + "', " + amount + ", '" + name + "');";
+        String sql = "INSERT INTO inventory_in (id, barcode, amount, name) VALUES ((SELECT nextval('inventory_in_sequence')), ?, ?, ?);";
         try {
-            Statement statement = connection.createStatement();
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, barcode);
+            statement.setInt(2, amount);
+            statement.setString(3, name);
             statement.executeUpdate(sql);
             int newAmount = getAmountFromName(name) + amount;
             String updateAmount = "UPDATE inventory SET amount = " + newAmount + " WHERE name = '" + name + "';";
@@ -217,9 +236,11 @@ public class DatabaseControl {
 
     // used to update the amount column in the inventory table associated with the name parameter
     public void updateInventoryAmountUsingName(String name, int amount) {
-        String sql = "UPDATE inventory SET amount = " + amount + " WHERE name = '" + name + "';";
+        String sql = "UPDATE inventory SET amount = ? WHERE name = ?;";
         try {
-            Statement statement = connection.createStatement();
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setInt(1, amount);
+            statement.setString(2, name);
             statement.executeUpdate(sql);
         } catch (Exception e) {
             e.printStackTrace();
@@ -228,9 +249,11 @@ public class DatabaseControl {
 
     // used to remove things from inventory in assocaited with a barcode no longer in use
     public void removeInventoryIn(String barcode) {
-        String sql = "SELECT id, amount, name FROM inventory_in WHERE barcode = '" + barcode + "';";
+        String sql = "SELECT id, amount, name FROM inventory_in WHERE barcode = ?;";
         try {
-            ResultSet resultSet = connection.createStatement().executeQuery(sql);
+            PreparedStatement pstmt = connection.prepareStatement(sql);
+            pstmt.setString(1, barcode);
+            ResultSet resultSet = pstmt.executeQuery();
             boolean found = false;
             int amount = -1;
             String name = null;
@@ -256,10 +279,12 @@ public class DatabaseControl {
 
     // used to check the reoder amount in the inventory table associated with the name parameter
     public void conductReorderAmountCheck(String name, int newAmount) {
-        String sql = "SELECT reorder_amount FROM inventory WHERE name = '" + name +"';";
+        String sql = "SELECT reorder_amount FROM inventory WHERE name = ?;";
         try {
             int reorderAmount = -1;
-            ResultSet resultSet = connection.createStatement().executeQuery(sql);
+            PreparedStatement st = connection.prepareStatement(sql);
+            st.setString(1, name);
+            ResultSet resultSet = st.executeQuery();
             while (resultSet.next()) {
                 reorderAmount = resultSet.getInt("reorder_amount");
             }
@@ -331,9 +356,10 @@ public class DatabaseControl {
 
     // uses the barcode to get the information from inventory_in table
     public InventoryIn getInventoryInFromBarcode(String barcode) {
-        String sql = "SELECT * FROM inventory_in WHERE barcode = '" + barcode + "';";
+        String sql = "SELECT * FROM inventory_in WHERE barcode = ?;";
         try {
-            Statement statement = connection.createStatement();
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, barcode);
             ResultSet resultSet = statement.executeQuery(sql);
             while (resultSet.next()) {
                 int id = resultSet.getInt("id");
@@ -350,9 +376,10 @@ public class DatabaseControl {
 
     // removes row from inventory_in table based upon the id
     public void removeFromInventoryIn(int id) {
-        String sql = "DELETE FROM inventory_in WHERE id = " + id + ";";
+        String sql = "DELETE FROM inventory_in WHERE id = ?;";
         try {
-            Statement statement = connection.createStatement();
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setInt(1, id);
             statement.executeUpdate(sql);
         } catch (Exception e) {
             e.printStackTrace();
